@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MongoDB Aggregation Practice & Supercar CRUD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Header / Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="logo-icon">🏎️</span>
+        <div>
+          <h1>MongoAggregation<span>Hub</span></h1>
+          <p class="subtitle">Mongoose CRUD & MongoDB Aggregation Practice Platform</p>
+        </div>
+      </div>
+      <div class="status-bar">
+        <div id="dbStatusBadge" class="badge badge-offline">
+          <span class="dot"></span> <span id="dbStatusText">Checking DB...</span>
+        </div>
+        <div id="carCountBadge" class="badge badge-info">
+          📊 Cars: <strong id="carCountText">0</strong>
+        </div>
+        <button id="seedDbBtn" class="btn btn-secondary btn-sm" onclick="handleSeedDatabase()">
+          ⚡ Seed Sample DB
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="practice">
+        🎯 Practice Questions & Solver
+      </button>
+      <button class="nav-tab" data-tab="sandbox">
+        🧪 Custom Aggregation Sandbox
+      </button>
+      <button class="nav-tab" data-tab="crud">
+        🚘 Supercar CRUD Manager
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="app-main">
+    <!-- TAB 1: PRACTICE HUB -->
+    <section id="tab-practice" class="tab-content active">
+      <div class="practice-layout">
+        <!-- Questions Sidebar / List -->
+        <aside class="questions-sidebar">
+          <div class="sidebar-header">
+            <h3>Practice Questions</h3>
+            <span id="questionCount" class="pill">0 Questions</span>
+          </div>
+          <div class="filter-controls">
+            <select id="difficultyFilter" onchange="renderQuestionsList()">
+              <option value="ALL">All Difficulties</option>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+              <option value="Expert">Expert</option>
+            </select>
+          </div>
+          <div id="questionsList" class="questions-list">
+            <!-- Dynamic Question Cards rendered here -->
+          </div>
+        </aside>
+
+        <!-- Question Workspace / Solver -->
+        <div class="workspace">
+          <div id="questionEmptyState" class="empty-state">
+            <div class="icon">💡</div>
+            <h3>Select a Practice Question to Begin</h3>
+            <p>Choose any MongoDB aggregation question from the sidebar to practice writing pipeline stages and test your solution live!</p>
+          </div>
+
+          <div id="questionSolver" class="question-solver hidden">
+            <!-- Question Details Header -->
+            <div class="question-header">
+              <div>
+                <div class="question-meta">
+                  <span id="qCategory" class="tag tag-category">Category</span>
+                  <span id="qDifficulty" class="tag tag-easy">Easy</span>
+                </div>
+                <h2 id="qTitle">Question Title</h2>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="toggleHint()">
+                💡 Toggle Hint
+              </button>
+            </div>
+
+            <!-- Problem Description & Hint -->
+            <div class="question-body">
+              <div class="prompt-box">
+                <h4>Task Description:</h4>
+                <p id="qDescription">Question text...</p>
+              </div>
+
+              <div id="hintBox" class="hint-box hidden">
+                <strong>Hint:</strong> <span id="qHint">Hint text...</span>
+              </div>
+            </div>
+
+            <!-- Code Editor & Action Bar -->
+            <div class="editor-section">
+              <div class="editor-header">
+                <span>Write Aggregation Pipeline (JSON Array)</span>
+                <div class="editor-actions">
+                  <button class="btn btn-outline btn-xs" onclick="formatUserPipeline()">Format JSON</button>
+                  <button class="btn btn-outline btn-xs" onclick="resetUserPipeline()">Reset</button>
+                </div>
+              </div>
+              <textarea id="pipelineEditor" class="code-editor" spellcheck="false" placeholder="[&#10;  { &quot;$match&quot;: { ... } },&#10;  { &quot;$group&quot;: { ... } }&#10;]"></textarea>
+              
+              <div class="action-bar">
+                <button id="verifyBtn" class="btn btn-primary" onclick="verifyCurrentAnswer()">
+                  ▶ Execute & Verify Answer
+                </button>
+                <span id="verifySpinner" class="spinner hidden"></span>
+              </div>
+            </div>
+
+            <!-- Verification & Comparison Results -->
+            <div id="resultSection" class="result-section hidden">
+              <div id="feedbackBanner" class="feedback-banner">
+                <!-- Pass / Fail message -->
+              </div>
+
+              <div class="comparison-grid">
+                <div class="result-box">
+                  <div class="box-header">
+                    <span>Your Output (<span id="userCount">0</span> docs, <span id="userTime">0</span>ms)</span>
+                  </div>
+                  <pre id="userOutput" class="code-block"></pre>
+                </div>
+
+                <div class="result-box">
+                  <div class="box-header">
+                    <span>Expected Solution (<span id="expectedCount">0</span> docs)</span>
+                    <button class="btn-text btn-xs" onclick="toggleSolutionPipeline()">Show Solution Pipeline</button>
+                  </div>
+                  <div id="solutionPipelineContainer" class="hidden">
+                    <div class="sub-label">Reference Solution Pipeline:</div>
+                    <pre id="solutionPipelineCode" class="code-block code-solution"></pre>
+                  </div>
+                  <pre id="expectedOutput" class="code-block"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: CUSTOM AGGREGATION SANDBOX -->
+    <section id="tab-sandbox" class="tab-content">
+      <div class="sandbox-container">
+        <div class="sandbox-header">
+          <h2>Custom Aggregation Sandbox</h2>
+          <p>Compose and execute any MongoDB aggregation pipeline (`$match`, `$group`, `$unwind`, `$project`, `$facet`, `$sort`, `$addFields`, etc.) on the <code>super_cars</code> collection.</p>
+        </div>
+
+        <div class="sandbox-workspace">
+          <div class="editor-section">
+            <div class="editor-header">
+              <span>Aggregation Pipeline JSON</span>
+              <div>
+                <button class="btn btn-outline btn-xs" onclick="setSandboxTemplate('group')">Template: Group & Avg</button>
+                <button class="btn btn-outline btn-xs" onclick="setSandboxTemplate('unwind')">Template: Unwind Features</button>
+                <button class="btn btn-outline btn-xs" onclick="setSandboxTemplate('facet')">Template: Multi-Facet</button>
+                <button class="btn btn-outline btn-xs" onclick="formatSandboxJson()">Format JSON</button>
+              </div>
+            </div>
+            <textarea id="sandboxEditor" class="code-editor" spellcheck="false">[
+  {
+    "$group": {
+      "_id": "$basicInfo.brand",
+      "carCount": { "$sum": 1 },
+      "avgPrice": { "$avg": "$pricing.exShowroom" },
+      "maxTopSpeed": { "$max": "$performance.topSpeed.value" }
+    }
+  },
+  { "$sort": { "carCount": -1 } }
+]</textarea>
+            <div class="action-bar">
+              <button class="btn btn-primary" onclick="runSandboxQuery()">
+                🚀 Run Custom Aggregation
+              </button>
+              <span id="sandboxMeta" class="meta-info"></span>
+            </div>
+          </div>
+
+          <div class="result-section">
+            <div class="box-header">
+              <span>Aggregation Output JSON</span>
+            </div>
+            <pre id="sandboxOutput" class="code-block">// Execution results will appear here...</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: SUPERCAR CRUD MANAGER -->
+    <section id="tab-crud" class="tab-content">
+      <div class="crud-container">
+        <div class="crud-header">
+          <div>
+            <h2>Supercar Inventory Manager</h2>
+            <p>Create, read, search, update, and delete supercar records in <code>cars_db.super_cars</code>.</p>
+          </div>
+          <button class="btn btn-success" onclick="openCreateCarModal()">
+            ➕ Add New Supercar
+          </button>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="crud-controls">
+          <input type="text" id="crudSearch" placeholder="Search brand, model, tag, feature..." oninput="debounceLoadCars()">
+          <select id="crudBrandFilter" onchange="loadCarsTable()">
+            <option value="">All Brands</option>
+          </select>
+          <select id="crudBodyTypeFilter" onchange="loadCarsTable()">
+            <option value="">All Body Types</option>
+            <option value="Sedan">Sedan</option>
+            <option value="Coupe">Coupe</option>
+            <option value="Convertible">Convertible</option>
+            <option value="Grand Tourer">Grand Tourer</option>
+          </select>
+          <select id="crudSortBy" onchange="loadCarsTable()">
+            <option value="createdAt">Sort: Created Date</option>
+            <option value="price">Sort: Ex-Showroom Price</option>
+            <option value="power">Sort: Horsepower</option>
+            <option value="topSpeed">Sort: Top Speed</option>
+          </select>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Brand & Model</th>
+                <th>Year</th>
+                <th>Body / Origin</th>
+                <th>Engine & Power</th>
+                <th>0-100 & Top Speed</th>
+                <th>Ex-Showroom Price</th>
+                <th>Overall Rating</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="carsTableBody">
+              <!-- Cars rows dynamically inserted -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-bar">
+          <span id="crudPaginationInfo">Showing 0 of 0</span>
+          <div class="pagination-btns">
+            <button id="prevPageBtn" class="btn btn-outline btn-sm" onclick="changePage(-1)">Previous</button>
+            <span id="currentPageNum" class="page-num">1</span>
+            <button id="nextPageBtn" class="btn btn-outline btn-sm" onclick="changePage(1)">Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: View / Edit / Create Document -->
+  <div id="carModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalTitle">View Supercar Document</h3>
+        <button class="close-btn" onclick="closeCarModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tabs">
+          <button id="tabFormBtn" class="modal-tab active" onclick="switchModalView('form')">Structured Form</button>
+          <button id="tabJsonBtn" class="modal-tab" onclick="switchModalView('json')">Raw JSON</button>
+        </div>
+
+        <!-- Structured Form View -->
+        <form id="carForm" class="car-form" onsubmit="handleCarFormSubmit(event)">
+          <input type="hidden" id="formCarId">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Brand *</label>
+              <input type="text" id="fBrand" required placeholder="e.g. BMW">
+            </div>
+            <div class="form-group">
+              <label>Model *</label>
+              <input type="text" id="fModel" required placeholder="e.g. M340i">
+            </div>
+            <div class="form-group">
+              <label>Variant</label>
+              <input type="text" id="fVariant" placeholder="e.g. xDrive">
+            </div>
+            <div class="form-group">
+              <label>Year *</label>
+              <input type="number" id="fYear" required placeholder="2026">
+            </div>
+            <div class="form-group">
+              <label>Body Type *</label>
+              <input type="text" id="fBodyType" required placeholder="Sedan / Coupe / Convertible">
+            </div>
+            <div class="form-group">
+              <label>Country of Manufacture</label>
+              <input type="text" id="fCountry" placeholder="e.g. Germany">
+            </div>
+            <div class="form-group">
+              <label>Fuel / Engine Type</label>
+              <input type="text" id="fEngineType" placeholder="Petrol / Hybrid">
+            </div>
+            <div class="form-group">
+              <label>Horsepower (hp)</label>
+              <input type="number" id="fPower" placeholder="374">
+            </div>
+            <div class="form-group">
+              <label>Top Speed (km/h)</label>
+              <input type="number" id="fTopSpeed" placeholder="250">
+            </div>
+            <div class="form-group">
+              <label>Ex-Showroom Price (INR) *</label>
+              <input type="number" id="fPrice" required placeholder="7290000">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Document</button>
+            <button type="button" class="btn btn-secondary" onclick="closeCarModal()">Cancel</button>
+          </div>
+        </form>
+
+        <!-- Raw JSON View -->
+        <div id="jsonViewContainer" class="hidden">
+          <textarea id="rawJsonEditor" class="code-editor" style="height: 350px;"></textarea>
+          <div class="form-actions" style="margin-top: 15px;">
+            <button type="button" class="btn btn-primary" onclick="saveRawJsonModal()">Save JSON Changes</button>
+            <button type="button" class="btn btn-secondary" onclick="closeCarModal()">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
